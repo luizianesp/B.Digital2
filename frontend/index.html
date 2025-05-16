@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>B.Gigital - Gerenciador de Biblioteca</title>
+  <title>B.Digital - Gerenciador de Biblioteca</title>
 </head>
 <body>
   <h1>B.Digital - Gerenciador de Biblioteca</h1>
@@ -82,8 +82,7 @@
         return await response.json();
       } catch (error) {
         console.error('Erro ao buscar livros:', error);
-        messageElement.textContent = 'Erro ao carregar livros. Verifique se o servidor está rodando.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao carregar livros. Verifique se o servidor está rodando.', true);
         return [];
       }
     }
@@ -97,8 +96,7 @@
         return await response.json();
       } catch (error) {
         console.error(`Erro ao buscar livro ${id}:`, error);
-        messageElement.textContent = 'Erro ao buscar detalhes do livro.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao buscar detalhes do livro.', true);
         return null;
       }
     }
@@ -119,8 +117,7 @@
         return await response.json();
       } catch (error) {
         console.error('Erro ao adicionar livro:', error);
-        messageElement.textContent = 'Erro ao adicionar livro. Tente novamente.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao adicionar livro. Tente novamente.', true);
         return null;
       }
     }
@@ -141,8 +138,7 @@
         return await response.json();
       } catch (error) {
         console.error(`Erro ao atualizar livro ${id}:`, error);
-        messageElement.textContent = 'Erro ao atualizar livro. Tente novamente.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao atualizar livro. Tente novamente.', true);
         return null;
       }
     }
@@ -159,13 +155,27 @@
         return await response.json();
       } catch (error) {
         console.error(`Erro ao remover livro ${id}:`, error);
-        messageElement.textContent = 'Erro ao remover livro. Tente novamente.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao remover livro. Tente novamente.', true);
         return null;
       }
     }
     
     // Funções da UI
+    function showMessage(text, isError = false) {
+      messageElement.textContent = text;
+      messageElement.style.display = 'block';
+      
+      if (isError) {
+        messageElement.style.color = 'red';
+      } else {
+        messageElement.style.color = 'green';
+      }
+      
+      setTimeout(() => {
+        messageElement.style.display = 'none';
+      }, 5000);
+    }
+    
     async function loadBooks() {
       booksContainer.innerHTML = '<p>Carregando...</p>';
       
@@ -181,17 +191,17 @@
         books.forEach(book => {
           const bookElement = document.createElement('div');
           bookElement.innerHTML = `
+            <hr>
             <h3>${book.title}</h3>
             <p><strong>Autor:</strong> ${book.author}</p>
-            <p><strong>Ano:</strong> ${book.year}</p>
-            <p><strong>Gênero:</strong> ${book.genre || 'Não especificado'}</p>
+            <p><strong>Ano:</strong> ${book.year || 'Não informado'}</p>
+            <p><strong>Gênero:</strong> ${book.genre || 'Não categorizado'}</p>
             <p><strong>Descrição:</strong> ${book.description || 'Sem descrição'}</p>
-            ${book.cover ? `<img src="${book.cover}" alt="${book.title}" width="150">` : ''}
+            ${book.cover ? `<img src="${book.cover}" alt="${book.title}" width="150" onerror="this.style.display='none'">` : ''}
             <div>
               <button class="edit-book" data-id="${book.id}">Editar</button>
               <button class="delete-book" data-id="${book.id}">Remover</button>
             </div>
-            <hr>
           `;
           booksContainer.appendChild(bookElement);
           
@@ -205,6 +215,7 @@
         });
       } catch (error) {
         booksContainer.innerHTML = '<p>Erro ao carregar livros. Verifique se o servidor está rodando.</p>';
+        console.error('Erro ao carregar livros:', error);
       }
     }
     
@@ -230,7 +241,7 @@
         bookIdInput.value = book.id;
         document.getElementById('title').value = book.title;
         document.getElementById('author').value = book.author;
-        document.getElementById('year').value = book.year;
+        document.getElementById('year').value = book.year || '';
         document.getElementById('genre').value = book.genre || '';
         document.getElementById('description').value = book.description || '';
         document.getElementById('cover').value = book.cover || '';
@@ -243,8 +254,7 @@
         addBookForm.style.display = 'block';
         addBookBtn.style.display = 'none';
       } catch (error) {
-        messageElement.textContent = 'Erro ao carregar dados do livro para edição.';
-        messageElement.style.display = 'block';
+        showMessage('Erro ao carregar dados do livro para edição.', true);
       }
     }
     
@@ -265,8 +275,7 @@
       
       // Validação básica
       if (!titleInput.value || !authorInput.value) {
-        messageElement.textContent = 'Título e autor são campos obrigatórios!';
-        messageElement.style.display = 'block';
+        showMessage('Título e autor são campos obrigatórios!', true);
         return;
       }
       
@@ -286,28 +295,22 @@
           // Atualizar livro existente
           result = await updateBook(bookId, bookData);
           if (result) {
-            messageElement.textContent = 'Livro atualizado com sucesso!';
+            showMessage('Livro atualizado com sucesso!');
           }
         } else {
           // Adicionar novo livro
           result = await addBook(bookData);
           if (result) {
-            messageElement.textContent = 'Livro adicionado com sucesso!';
+            showMessage('Livro adicionado com sucesso!');
           }
         }
         
         if (result) {
-          messageElement.style.display = 'block';
-          setTimeout(() => {
-            messageElement.style.display = 'none';
-          }, 3000);
-          
           hideBookForm();
           loadBooks();
         }
       } catch (error) {
-        messageElement.textContent = isEditing ? 'Erro ao atualizar livro.' : 'Erro ao adicionar livro.';
-        messageElement.style.display = 'block';
+        showMessage(isEditing ? 'Erro ao atualizar livro.' : 'Erro ao adicionar livro.', true);
       }
     }
     
@@ -316,20 +319,33 @@
         try {
           const result = await deleteBook(id);
           if (result) {
-            messageElement.textContent = 'Livro removido com sucesso!';
-            messageElement.style.display = 'block';
-            setTimeout(() => {
-              messageElement.style.display = 'none';
-            }, 3000);
-            
+            showMessage('Livro removido com sucesso!');
             loadBooks();
           }
         } catch (error) {
-          messageElement.textContent = 'Erro ao remover livro.';
-          messageElement.style.display = 'block';
+          showMessage('Erro ao remover livro.', true);
         }
       }
     }
+    
+    // Verificar conexão com o backend ao carregar a página
+    async function checkBackendConnection() {
+      try {
+        const response = await fetch(API_URL);
+        if (response.ok) {
+          console.log('Conexão com o backend estabelecida com sucesso!');
+        } else {
+          console.error('Erro ao conectar com o backend:', response.status);
+          showMessage('Erro de conexão com o servidor. Verifique se o backend está rodando.', true);
+        }
+      } catch (error) {
+        console.error('Erro de conexão com o backend:', error);
+        showMessage('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3000.', true);
+      }
+    }
+    
+    // Verificar conexão ao iniciar
+    checkBackendConnection();
   </script>
 </body>
 </html>

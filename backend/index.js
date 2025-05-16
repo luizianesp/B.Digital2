@@ -1,28 +1,44 @@
-// backend/index.js
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
+// backend/setup.js
 const fs = require('fs');
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const Book = require('./models/Book');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
 
 // Criar pasta do banco de dados se não existir
 const dbDir = path.join(__dirname, 'database');
 if (!fs.existsSync(dbDir)) {
+  console.log('Criando diretório de banco de dados...');
   fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// Salvar o schema SQL se ainda não existir
+const schemaPath = path.join(__dirname, 'database/schema.sql');
+if (!fs.existsSync(schemaPath)) {
+  console.log('Criando arquivo de schema SQL...');
+  const schema = `-- Criação da tabela de livros
+CREATE TABLE IF NOT EXISTS books (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  author TEXT NOT NULL,
+  year INTEGER,
+  genre TEXT,
+  description TEXT,
+  cover TEXT
+);
+
+-- Inserir alguns dados de exemplo
+INSERT INTO books (id, title, author, year, genre, description, cover)
+VALUES 
+  ('99e92b24-17d6-4f38-b0fe-8256246f76d6', 'Dom Casmurro', 'Machado de Assis', 1899, 'Romance', 'Um clássico da literatura brasileira que narra a história de Bentinho e seu ciúme por Capitu.', ''),
+  ('5ddedcee-a021-4aa1-b9f7-be4d23510d25', 'O Senhor dos Anéis', 'J.R.R. Tolkien', 1954, 'Fantasia', 'Uma saga épica em um mundo de fantasia onde anões, elfos e humanos lutam contra o mal.', 'https://m.media-amazon.com/images/I/71ZLavBjpRL._SY466_.jpg');`;
+  
+  fs.writeFileSync(schemaPath, schema);
 }
 
 // Caminho para o banco de dados
 const dbPath = path.join(__dirname, 'database/database.sqlite');
 
 // Criar banco de dados e tabelas se não existirem
+console.log('Configurando banco de dados...');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Erro ao conectar ao banco de dados:', err.message);
@@ -32,7 +48,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
   console.log('Conectado ao banco de dados SQLite');
   
   // Executar script SQL de criação das tabelas
-  const schemaPath = path.join(__dirname, 'database/schema.sql');
   const schema = fs.readFileSync(schemaPath, 'utf8');
   
   db.exec(schema, (err) => {
@@ -41,99 +56,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
       console.log('Tabelas criadas com sucesso');
     }
+    
+    // Fechar conexão com o banco de dados
+    db.close();
+    console.log('Configuração concluída com sucesso!');
   });
-});
-
-// Rota raiz
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: "Bem-vindo à API do B.Digital", 
-    endpoints: {
-      getAllBooks: "GET /books",
-      getBookById: "GET /books/:id",
-      createBook: "POST /books",
-      updateBook: "PUT /books/:id",
-      deleteBook: "DELETE /books/:id"
-    }
-  });
-});
-
-// Rotas CRUD para livros
-// GET /books - Listar todos os livros
-app.get('/books', async (req, res) => {
-  try {
-    const books = await Book.getAll();
-    res.status(200).json(books);
-  } catch (error) {
-    res.status(500).json({ message: "Erro ao buscar livros", error: error.message });
-  }
-});
-
-// GET /books/:id - Obter um livro específico pelo ID
-app.get('/books/:id', async (req, res) => {
-  try {
-    const book = await Book.getById(req.params.id);
-    if (!book) {
-      return res.status(404).json({ message: "Livro não encontrado" });
-    }
-    res.status(200).json(book);
-  } catch (error) {
-    res.status(500).json({ message: "Erro ao buscar livro", error: error.message });
-  }
-});
-
-// POST /books - Criar um novo livro
-app.post('/books', async (req, res) => {
-  const { title, author, year, genre, description, cover } = req.body;
-  
-  // Validação básica
-  if (!title || !author) {
-    return res.status(400).json({ message: "Título e autor são obrigatórios" });
-  }
-  
-  try {
-    const newBook = await Book.create({ title, author, year, genre, description, cover });
-    res.status(201).json(newBook);
-  } catch (error) {
-    res.status(500).json({ message: "Erro ao criar livro", error: error.message });
-  }
-});
-
-// PUT /books/:id - Atualizar um livro existente
-app.put('/books/:id', async (req, res) => {
-  const { title, author, year, genre, description, cover } = req.body;
-  const id = req.params.id;
-  
-  // Validação básica
-  if (!title || !author) {
-    return res.status(400).json({ message: "Título e autor são obrigatórios" });
-  }
-  
-  try {
-    const updatedBook = await Book.update(id, { title, author, year, genre, description, cover });
-    res.status(200).json(updatedBook);
-  } catch (error) {
-    if (error.message === 'Livro não encontrado') {
-      return res.status(404).json({ message: "Livro não encontrado" });
-    }
-    res.status(500).json({ message: "Erro ao atualizar livro", error: error.message });
-  }
-});
-
-// DELETE /books/:id - Remover um livro pelo ID
-app.delete('/books/:id', async (req, res) => {
-  try {
-    await Book.delete(req.params.id);
-    res.status(200).json({ message: "Livro removido com sucesso" });
-  } catch (error) {
-    if (error.message === 'Livro não encontrado') {
-      return res.status(404).json({ message: "Livro não encontrado" });
-    }
-    res.status(500).json({ message: "Erro ao remover livro", error: error.message });
-  }
-});
-
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });

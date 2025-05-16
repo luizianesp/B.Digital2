@@ -1,6 +1,6 @@
 # B.Digital - Sistema de Gerenciamento de Biblioteca Digital
 
-B.Digital é um sistema completo para gerenciamento de biblioteca digital que permite listar, visualizar, adicionar, editar e remover livros de um catálogo. O projeto implementa um CRUD completo com persistência em arquivo JSON.
+B.Digital é um sistema completo para gerenciamento de biblioteca digital que permite listar, visualizar, adicionar, editar e remover livros de um catálogo. O projeto implementa um CRUD completo com persistência em banco de dados SQLite.
 
 ## Funcionalidades
 
@@ -9,15 +9,16 @@ B.Digital é um sistema completo para gerenciamento de biblioteca digital que pe
 - ✅ Adicionar um novo livro
 - ✅ Editar um livro existente
 - ✅ Remover um livro
-- ✅ Persistência de dados em arquivo JSON
+- ✅ Persistência de dados em banco SQLite
 
 ## Tecnologias Utilizadas
 
 ### Back-end
 - Node.js
 - Express.js
-- File System (fs) para persistência em arquivo
+- SQLite para armazenamento de dados
 - UUID para geração de identificadores únicos
+- CORS para permitir comunicação entre frontend e backend
 
 ### Front-end
 - HTML5
@@ -27,17 +28,21 @@ B.Digital é um sistema completo para gerenciamento de biblioteca digital que pe
 ## Estrutura do Projeto
 
 ```
-PROJETO/
+B.DIGITAL/
 │
 ├── backend/               // Código do back-end com CRUD completo
-│   ├── data.json         // Arquivo JSON para persistência
-│   ├── index.js          // Código principal do servidor
-│   └── package.json      // Dependências do Node.js
+│   ├── database/          // Pasta para arquivos de banco de dados
+│   │   ├── database.sqlite// Arquivo do banco de dados (criado automaticamente)
+│   │   └── schema.sql     // Esquema de criação das tabelas
+│   ├── models/            // Modelos de dados
+│   │   └── Book.js        // Modelo para manipulação de livros
+│   ├── index.js           // Código principal do servidor
+│   └── package.json       // Dependências do Node.js
 │
-├── frontend/             // Código do front-end
-│   └── index.html        // Página web com HTML e JavaScript
+├── frontend/              // Código do front-end
+│   └── index.html         // Página web com HTML e JavaScript
 │
-└── README.md             // Este arquivo
+└── README.md              // Este arquivo
 ```
 
 ## Como Executar o Projeto
@@ -54,19 +59,41 @@ PROJETO/
    cd [b.Digital]
    ```
 
-2. **Instale as dependências do back-end**
+2. **Configure o backend**
    ```bash
    cd backend
-   npm install
+   npm install express cors sqlite3 uuid
+   mkdir -p database
    ```
 
-3. **Inicie o servidor back-end**
+3. **Crie o arquivo schema.sql**
+   Crie o arquivo `database/schema.sql` com o conteúdo:
+   ```sql
+   -- Criação da tabela de livros
+   CREATE TABLE IF NOT EXISTS books (
+     id TEXT PRIMARY KEY,
+     title TEXT NOT NULL,
+     author TEXT NOT NULL,
+     year INTEGER,
+     genre TEXT,
+     description TEXT,
+     cover TEXT
+   );
+
+   -- Inserir alguns dados de exemplo
+   INSERT INTO books (id, title, author, year, genre, description, cover)
+   VALUES 
+     ('99e92b24-17d6-4f38-b0fe-8256246f76d6', 'Dom Casmurro', 'Machado de Assis', 1899, 'Romance', 'Um clássico da literatura brasileira que narra a história de Bentinho e seu ciúme por Capitu.', ''),
+     ('5ddedcee-a021-4aa1-b9f7-be4d23510d25', 'O Senhor dos Anéis', 'J.R.R. Tolkien', 1954, 'Fantasia', 'Uma saga épica em um mundo de fantasia onde anões, elfos e humanos lutam contra o mal.', 'https://m.media-amazon.com/images/I/71ZLavBjpRL._SY466_.jpg');
+   ```
+
+4. **Inicie o servidor back-end**
    ```bash
-   npm start
+   node index.js
    ```
    O servidor estará rodando em http://localhost:3000
 
-4. **Abra o front-end**
+5. **Abra o front-end**
    - Abra um novo terminal e navegue até a pasta raiz do projeto
    - Navegue até a pasta `frontend`
    - Abra o arquivo `index.html` em um navegador web
@@ -78,8 +105,26 @@ PROJETO/
 
 ### Observações
 - Certifique-se de que o servidor back-end esteja rodando antes de acessar o front-end
-- O arquivo `data.json` já contém alguns livros de exemplo
-- Todas as alterações (adição, edição, remoção) são automaticamente salvas no arquivo `data.json`
+- O arquivo de banco de dados `database.sqlite` será criado automaticamente na primeira execução
+- O esquema do banco de dados e os livros de exemplo são carregados do arquivo `schema.sql`
+
+## Solução de Problemas
+
+Se o frontend não conseguir se conectar ao backend, verifique:
+
+1. **O servidor backend está rodando?**
+   - Verifique se você iniciou o servidor com `node index.js`
+   - Verifique se não há erros no console do terminal
+
+2. **CORS está configurado?**
+   - Certifique-se que `app.use(cors());` está no arquivo `index.js` do backend
+
+3. **Porta correta?**
+   - O frontend está tentando se conectar a `http://localhost:3000`
+   - Verifique se o backend está realmente rodando na porta 3000
+
+4. **Dependências instaladas?**
+   - Certifique-se de ter instalado: `express`, `cors`, `sqlite3` e `uuid`
 
 ## API REST
 
@@ -94,7 +139,13 @@ PROJETO/
 | DELETE | `/books/:id` | Remove um livro |
 | GET | `/` | Informações sobre a API |
 
-## Vídeo Explicativo
+## Próximos Passos
 
-Para uma explicação detalhada do funcionamento do sistema, assista ao [vídeo explicativo](LINK_DO_VIDEO).
+Algumas melhorias que podem ser implementadas:
 
+- Adicionar estilos CSS para melhorar a aparência
+- Implementar sistema de autenticação
+- Adicionar funcionalidades de busca e filtros
+- Permitir upload de imagens para capas de livros
+- Adicionar sistema de categorias/tags
+- Implementar funcionalidade de empréstimos/devoluções
