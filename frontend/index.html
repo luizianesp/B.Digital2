@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B.Gigital - Gerenciador de Biblioteca</title>
+</head>
+<body>
+  <h1>B.Digital - Gerenciador de Biblioteca</h1>
+  
+  <div id="message" style="display: none;"></div>
+  
+  <button id="add-book-btn">Adicionar Livro</button>
+  
+  <div id="add-book-form" style="display: none;">
+    <h2 id="form-title">Adicionar Livro</h2>
+    <form id="book-form">
+      <input type="hidden" id="book-id">
+      <div>
+        <label for="title">Título:</label>
+        <input type="text" id="title" required>
+      </div>
+      <div>
+        <label for="author">Autor:</label>
+        <input type="text" id="author" required>
+      </div>
+      <div>
+        <label for="year">Ano:</label>
+        <input type="number" id="year">
+      </div>
+      <div>
+        <label for="genre">Gênero:</label>
+        <input type="text" id="genre">
+      </div>
+      <div>
+        <label for="description">Descrição:</label>
+        <textarea id="description" rows="3"></textarea>
+      </div>
+      <div>
+        <label for="cover">URL da Capa:</label>
+        <input type="url" id="cover">
+      </div>
+      <button type="button" id="save-book">Salvar</button>
+      <button type="button" id="cancel-add">Cancelar</button>
+    </form>
+  </div>
+  
+  <h2>Lista de Livros</h2>
+  <div id="books-container">Carregando...</div>
+  
+  <script>
+    // URL da API
+    const API_URL = 'http://localhost:3000';
+    
+    // Elementos do DOM
+    const booksContainer = document.getElementById('books-container');
+    const messageElement = document.getElementById('message');
+    const addBookBtn = document.getElementById('add-book-btn');
+    const addBookForm = document.getElementById('add-book-form');
+    const bookForm = document.getElementById('book-form');
+    const saveBookBtn = document.getElementById('save-book');
+    const cancelAddBtn = document.getElementById('cancel-add');
+    const formTitle = document.getElementById('form-title');
+    const bookIdInput = document.getElementById('book-id');
+    
+    // Variável para controlar se estamos editando ou adicionando
+    let isEditing = false;
+    
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', loadBooks);
+    addBookBtn.addEventListener('click', showAddBookForm);
+    saveBookBtn.addEventListener('click', saveBook);
+    cancelAddBtn.addEventListener('click', hideBookForm);
+    
+    // Funções da API
+    async function getBooks() {
+      try {
+        const response = await fetch(`${API_URL}/books`);
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao buscar livros:', error);
+        messageElement.textContent = 'Erro ao carregar livros. Verifique se o servidor está rodando.';
+        messageElement.style.display = 'block';
+        return [];
+      }
+    }
+    
+    async function getBook(id) {
+      try {
+        const response = await fetch(`${API_URL}/books/${id}`);
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error(`Erro ao buscar livro ${id}:`, error);
+        messageElement.textContent = 'Erro ao buscar detalhes do livro.';
+        messageElement.style.display = 'block';
+        return null;
+      }
+    }
+    
+    async function addBook(bookData) {
+      try {
+        const response = await fetch(`${API_URL}/books`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookData)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao adicionar livro:', error);
+        messageElement.textContent = 'Erro ao adicionar livro. Tente novamente.';
+        messageElement.style.display = 'block';
+        return null;
+      }
+    }
+    
+    async function updateBook(id, bookData) {
+      try {
+        const response = await fetch(`${API_URL}/books/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookData)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error(`Erro ao atualizar livro ${id}:`, error);
+        messageElement.textContent = 'Erro ao atualizar livro. Tente novamente.';
+        messageElement.style.display = 'block';
+        return null;
+      }
+    }
+    
+    async function deleteBook(id) {
+      try {
+        const response = await fetch(`${API_URL}/books/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error(`Erro ao remover livro ${id}:`, error);
+        messageElement.textContent = 'Erro ao remover livro. Tente novamente.';
+        messageElement.style.display = 'block';
+        return null;
+      }
+    }
+    
+    // Funções da UI
+    async function loadBooks() {
+      booksContainer.innerHTML = '<p>Carregando...</p>';
+      
+      try {
+        const books = await getBooks();
+        
+        if (books.length === 0) {
+          booksContainer.innerHTML = '<p>Nenhum livro encontrado. Adicione seu primeiro livro!</p>';
+          return;
+        }
+        
+        booksContainer.innerHTML = '';
+        books.forEach(book => {
+          const bookElement = document.createElement('div');
+          bookElement.innerHTML = `
+            <h3>${book.title}</h3>
+            <p><strong>Autor:</strong> ${book.author}</p>
+            <p><strong>Ano:</strong> ${book.year}</p>
+            <p><strong>Gênero:</strong> ${book.genre || 'Não especificado'}</p>
+            <p><strong>Descrição:</strong> ${book.description || 'Sem descrição'}</p>
+            ${book.cover ? `<img src="${book.cover}" alt="${book.title}" width="150">` : ''}
+            <div>
+              <button class="edit-book" data-id="${book.id}">Editar</button>
+              <button class="delete-book" data-id="${book.id}">Remover</button>
+            </div>
+            <hr>
+          `;
+          booksContainer.appendChild(bookElement);
+          
+          // Adicionar evento de edição
+          const editBtn = bookElement.querySelector('.edit-book');
+          editBtn.addEventListener('click', () => handleEditBook(book.id));
+          
+          // Adicionar evento de remoção
+          const deleteBtn = bookElement.querySelector('.delete-book');
+          deleteBtn.addEventListener('click', () => handleDeleteBook(book.id));
+        });
+      } catch (error) {
+        booksContainer.innerHTML = '<p>Erro ao carregar livros. Verifique se o servidor está rodando.</p>';
+      }
+    }
+    
+    function showAddBookForm() {
+      // Resetar o formulário e configurar para adição
+      bookForm.reset();
+      bookIdInput.value = '';
+      formTitle.textContent = 'Adicionar Livro';
+      isEditing = false;
+      
+      // Mostrar o formulário
+      addBookForm.style.display = 'block';
+      addBookBtn.style.display = 'none';
+    }
+    
+    async function handleEditBook(id) {
+      try {
+        // Carregar os dados do livro
+        const book = await getBook(id);
+        if (!book) return;
+        
+        // Preencher o formulário com os dados do livro
+        bookIdInput.value = book.id;
+        document.getElementById('title').value = book.title;
+        document.getElementById('author').value = book.author;
+        document.getElementById('year').value = book.year;
+        document.getElementById('genre').value = book.genre || '';
+        document.getElementById('description').value = book.description || '';
+        document.getElementById('cover').value = book.cover || '';
+        
+        // Configurar o formulário para edição
+        formTitle.textContent = 'Editar Livro';
+        isEditing = true;
+        
+        // Mostrar o formulário
+        addBookForm.style.display = 'block';
+        addBookBtn.style.display = 'none';
+      } catch (error) {
+        messageElement.textContent = 'Erro ao carregar dados do livro para edição.';
+        messageElement.style.display = 'block';
+      }
+    }
+    
+    function hideBookForm() {
+      addBookForm.style.display = 'none';
+      addBookBtn.style.display = 'block';
+      bookForm.reset();
+    }
+    
+    async function saveBook() {
+      const bookId = bookIdInput.value;
+      const titleInput = document.getElementById('title');
+      const authorInput = document.getElementById('author');
+      const yearInput = document.getElementById('year');
+      const genreInput = document.getElementById('genre');
+      const descriptionInput = document.getElementById('description');
+      const coverInput = document.getElementById('cover');
+      
+      // Validação básica
+      if (!titleInput.value || !authorInput.value) {
+        messageElement.textContent = 'Título e autor são campos obrigatórios!';
+        messageElement.style.display = 'block';
+        return;
+      }
+      
+      const bookData = {
+        title: titleInput.value,
+        author: authorInput.value,
+        year: parseInt(yearInput.value) || 0,
+        genre: genreInput.value || 'Não categorizado',
+        description: descriptionInput.value || '',
+        cover: coverInput.value || ''
+      };
+      
+      try {
+        let result;
+        
+        if (isEditing) {
+          // Atualizar livro existente
+          result = await updateBook(bookId, bookData);
+          if (result) {
+            messageElement.textContent = 'Livro atualizado com sucesso!';
+          }
+        } else {
+          // Adicionar novo livro
+          result = await addBook(bookData);
+          if (result) {
+            messageElement.textContent = 'Livro adicionado com sucesso!';
+          }
+        }
+        
+        if (result) {
+          messageElement.style.display = 'block';
+          setTimeout(() => {
+            messageElement.style.display = 'none';
+          }, 3000);
+          
+          hideBookForm();
+          loadBooks();
+        }
+      } catch (error) {
+        messageElement.textContent = isEditing ? 'Erro ao atualizar livro.' : 'Erro ao adicionar livro.';
+        messageElement.style.display = 'block';
+      }
+    }
+    
+    async function handleDeleteBook(id) {
+      if (confirm('Tem certeza que deseja remover este livro?')) {
+        try {
+          const result = await deleteBook(id);
+          if (result) {
+            messageElement.textContent = 'Livro removido com sucesso!';
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+              messageElement.style.display = 'none';
+            }, 3000);
+            
+            loadBooks();
+          }
+        } catch (error) {
+          messageElement.textContent = 'Erro ao remover livro.';
+          messageElement.style.display = 'block';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

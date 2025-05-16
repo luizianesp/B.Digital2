@@ -1,0 +1,100 @@
+# B.Digital - Sistema de Gerenciamento de Biblioteca Digital
+
+B.Digital é um sistema completo para gerenciamento de biblioteca digital que permite listar, visualizar, adicionar, editar e remover livros de um catálogo. O projeto implementa um CRUD completo com persistência em arquivo JSON.
+
+## Funcionalidades
+
+- ✅ Visualizar todos os livros
+- ✅ Visualizar detalhes de um livro específico
+- ✅ Adicionar um novo livro
+- ✅ Editar um livro existente
+- ✅ Remover um livro
+- ✅ Persistência de dados em arquivo JSON
+
+## Tecnologias Utilizadas
+
+### Back-end
+- Node.js
+- Express.js
+- File System (fs) para persistência em arquivo
+- UUID para geração de identificadores únicos
+
+### Front-end
+- HTML5
+- JavaScript puro (Vanilla JS)
+- Fetch API para comunicação com o back-end
+
+## Estrutura do Projeto
+
+```
+PROJETO/
+│
+├── backend/               // Código do back-end com CRUD completo
+│   ├── data.json         // Arquivo JSON para persistência
+│   ├── index.js          // Código principal do servidor
+│   └── package.json      // Dependências do Node.js
+│
+├── frontend/             // Código do front-end
+│   └── index.html        // Página web com HTML e JavaScript
+│
+└── README.md             // Este arquivo
+```
+
+## Como Executar o Projeto
+
+### Pré-requisitos
+- Node.js (versão 14 ou superior)
+- npm (normalmente vem com o Node.js)
+
+### Instalação e Execução
+
+1. **Clone este repositório**
+   ```bash
+   git clone [URL_DO_REPOSITORIO]
+   cd [b.Digital]
+   ```
+
+2. **Instale as dependências do back-end**
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. **Inicie o servidor back-end**
+   ```bash
+   npm start
+   ```
+   O servidor estará rodando em http://localhost:3000
+
+4. **Abra o front-end**
+   - Abra um novo terminal e navegue até a pasta raiz do projeto
+   - Navegue até a pasta `frontend`
+   - Abra o arquivo `index.html` em um navegador web
+   
+   Ou, se tiver o VS Code com a extensão Live Server:
+   - Abra a pasta do projeto no VS Code
+   - Clique com o botão direito no arquivo `frontend/index.html` 
+   - Selecione "Open with Live Server"
+
+### Observações
+- Certifique-se de que o servidor back-end esteja rodando antes de acessar o front-end
+- O arquivo `data.json` já contém alguns livros de exemplo
+- Todas as alterações (adição, edição, remoção) são automaticamente salvas no arquivo `data.json`
+
+## API REST
+
+### Endpoints Disponíveis
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/books` | Retorna todos os livros |
+| GET | `/books/:id` | Retorna um livro específico pelo ID |
+| POST | `/books` | Adiciona um novo livro |
+| PUT | `/books/:id` | Atualiza um livro existente |
+| DELETE | `/books/:id` | Remove um livro |
+| GET | `/` | Informações sobre a API |
+
+## Vídeo Explicativo
+
+Para uma explicação detalhada do funcionamento do sistema, assista ao [vídeo explicativo](LINK_DO_VIDEO).
+
