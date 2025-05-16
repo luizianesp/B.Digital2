@@ -139,13 +139,6 @@ Se o frontend não conseguir se conectar ao backend, verifique:
 | DELETE | `/books/:id` | Remove um livro |
 | GET | `/` | Informações sobre a API |
 
-## Próximos Passos
+## Link do vídeo no youtube: 
+https://youtu.be/3-0SYC8nTjw
 
-Algumas melhorias que podem ser implementadas:
-
-- Adicionar estilos CSS para melhorar a aparência
-- Implementar sistema de autenticação
-- Adicionar funcionalidades de busca e filtros
-- Permitir upload de imagens para capas de livros
-- Adicionar sistema de categorias/tags
-- Implementar funcionalidade de empréstimos/devoluções
